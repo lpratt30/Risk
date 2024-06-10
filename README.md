@@ -43,7 +43,7 @@ Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/20
   ## Code contributors
 - Luke Pratt
 - Julia Shuieh
-- Rober Kiesler
+- Robert Kiesler
 - Ashish Panchal 
   
 
