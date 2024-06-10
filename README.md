@@ -40,3 +40,10 @@ Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/20
 - Credit assignment     
 - Reward functions
 
+  ## Code contributors
+- Luke Pratt
+- Julia Shuieh
+- Rober Kiesler
+- Ashish Panchal 
+  
+
