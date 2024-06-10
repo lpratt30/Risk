@@ -1,0 +1,33 @@
+experiment_name: test_default
+
+num_episodes: 1000
+max_actions: 2000
+save_interval: 500
+
+num_players: 2
+size: 1
+bot_types:
+ - "Neutral"
+
+num_layers: 5
+hidden_dim_max: 512
+hidden_dim_min: 128
+
+batch_size: 64
+gamma: 0.95
+learning_rate: 0.005
+tau: 0.05
+optimize_ratio: 2
+target_update_freq: 100
+
+decay_type: "lin"         # lin / geo / osc
+epsilon_max: 1
+epsilon_min: 0.1
+epsilon_decay: 0.99997    # for geo only
+num_oscillations: 10      # for osc only
+
+render_final_results: true
+load_checkpoint: "dqn_model_best.pth"
+eval_only: false
+show_board: false
+num_eval: 20
