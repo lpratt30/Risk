@@ -1,0 +1,33 @@
+num_episodes: 3500 
+max_actions: 1200 
+save_interval: 100
+#eval_interval: 100 
+
+num_players: 2
+size: 2
+bot_types:
+ - "Random"
+
+num_layers: 5 #5 layers: input, 512 -> 512,256 -> 256-> 128, 128 -> 128, 128 -> output_size 
+hidden_dim_max: 512
+hidden_dim_min: 128
+
+batch_size: 64
+gamma: .99 
+learning_rate: 0.00005 
+tau: 0.001
+optimize_ratio: 64 #optimize_ratio = agent.batch_size 
+target_update_freq: 1000 
+#self.memory_limit = 50000
+
+decay_type: "osc"         # lin / geo / osc # " "
+epsilon_max: 1
+epsilon_min: 0
+epsilon_decay: 0.99997    # for geo only
+num_oscillations: 10      # for osc only #" " num_oscillations = 10
+
+render_final_results: true
+load_checkpoint: "dqn_model_best.pth"
+eval_only: false
+show_board: false
+num_eval: 20
