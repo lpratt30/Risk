@@ -34,6 +34,7 @@ Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/20
 - State representation
   - Why do differences in the board size explode complexity for a NN but not a human? What heuristics can be used?
     - i.e discretize observation of troop counts in a meaningful way
+    - Hierarchical representation
 - Self-play     
 - More advanced bots     
 - Larger boards        
