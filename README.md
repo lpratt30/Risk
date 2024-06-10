@@ -1,4 +1,5 @@
-# GaTech CS7643 DL Group Project 
+# OpenAI Gym Risk Environment
+## Formerly: GaTech CS7643 DL Group Project 
 
 ![image](https://github.gatech.edu/storage/user/51858/files/5b3f41d7-a1e0-4910-b725-0b9973f7034e)
 
