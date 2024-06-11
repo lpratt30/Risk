@@ -201,6 +201,8 @@ def main(env_name, num_episodes=2000, save_interval=100, load_model=False):
             state_hist = [state]
             start = time.time()
 
+            optim_time = 0
+
 
             while not terminated:
                 action = agent.act(state)
@@ -220,10 +222,12 @@ def main(env_name, num_episodes=2000, save_interval=100, load_model=False):
                 actions += 1 #why the flipping heck is this so high??
                 if render and random.randint(1, render_frequency) == render_frequency:
                     env.show_board() #should prolly just save this or something, blocks are kinda annoying
+                start_optim = time.time()
                 if actions % agent.batch_size == 0:
                     for i in range(optimize_ratio):
                         loss += agent.optimize_network()
                         loss_count += 1
+                optim_time += time.time() - start_optim
 
 
                 if actions == max_actions: #but why is this happening in the first place
@@ -253,6 +257,7 @@ def main(env_name, num_episodes=2000, save_interval=100, load_model=False):
             print(f"Positive: {env.agent.positive_reward_only:.2f}, Negative: {env.agent.negative_reward_only:.2f}, Cumulative {env.agent.cumulative_reward:.2f}")
             print(f"Min Action Count: {min(action_values)}, Median Action Count: {statistics.median(action_values)}, Action {max_action_count}, has the maximum count: {action_counts[max_action_count]}")
             print(f"Placement Phase: {phase_counts[0]}, Attack Source: {phase_counts[1]}, Attack Target {phase_counts[2]}, Fortify From: {phase_counts[3]}, Fortify To: {phase_counts[4]}\n")
+            print(f"Total Time: {time.time() - start}, Optimization Time: {optim_time}\n")
 
 
             avg_rewards.append(total_reward / actions)

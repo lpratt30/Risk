@@ -24,7 +24,9 @@ from torch.autograd import Variable
 from collections import deque
 
 
-def can_attack(player, territories):
+def can_attack(player, territories, agents_phase):
+    if agents_phase != 1 and agents_phase != 2:
+        return False
     territories_owned = [i for i, owned in enumerate(player.territories) if owned]
     territories_owned_obj = [territories[i] for i in territories_owned]
     
@@ -35,7 +37,9 @@ def can_attack(player, territories):
                     return True
     return False
 
-def can_fortify(player, territories):
+def can_fortify(player, territories, agents_phase):
+    if agents_phase != 3 and agents_phase != 4:
+        return False
     territories_owned = [i for i, owned in enumerate(player.territories) if owned]
     territories_owned_obj = [territories[i] for i in territories_owned]
 
@@ -209,8 +213,8 @@ class RiskEnvFlat(gym.Env):
         placement_phase = 0
         attack_source_phase = 1
         attack_target_phase = 2
-        fortify_from_phase = 3
-        fortify_to_phase = 4
+        fortify_source_phase = 3
+        fortify_target_phase = 4
 
         skip_phase = action == len(self.territories)
         skip_action = len(self.territories)
@@ -258,121 +262,112 @@ class RiskEnvFlat(gym.Env):
             #however that doesnt matter here, if phasic or not, we get the reward at placement
             return state_prime, reward, self.agent_game_ended, False, {}
 
-        def handle_attack_phase(self, action):
-            if self.phase != attack_source_phase and self.phase != attack_target_phase:
-                raise "out of order phase handling"
+        def handle_attack_source_phase(self, action):
+            if self.phase != attack_source_phase:
+                raise "out of order phase handling found in call to handle_attack_source_phase(self, action)"
 
             # agent decides to skip the attack
             if action == skip_action:
-                self.phase = fortify_from_phase
+                self.phase = fortify_source_phase
                 reward = 0
                 if self.phasic_credit_assignment: reward = self.get_reward()
                 return self.get_state(), reward, self.agent_game_ended, False, {}
-            
-            # if we are choosing where to attack from
-            if self.phase == attack_source_phase:
-                from_terr = self.territories[action]
-                # if invalid
-                if (from_terr.troop_count < 2 or from_terr.owner != self.agent):
-                    self.phase = attack_source_phase
-                    reward = self.get_reward(illegal=True)
+
+            from_terr = self.territories[action]
+            # if invalid selected source territory
+            if (from_terr.troop_count < 2 or from_terr.owner != self.agent):
+                self.phase = attack_source_phase
+                reward = self.get_reward(illegal=True)
+                return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
+            else:
+                self.prev_move = action
+                self.from_terr = from_terr
+                self.phase = attack_target_phase
+                reward = 0
+                if self.phasic_credit_assignment: reward = self.get_reward()
+                return self.get_state(), reward, self.agent_game_ended, False, {}
+
+        def handle_attack_target_phase(self, action):
+            if self.phase != attack_target_phase:
+                raise "out of order phase handling found in call to handle_attack_target_phase(self, action)"
+
+            # agent decides to skip the attack
+            if action == skip_action:
+                # not letting agent skip attack_target phase as it must've not skipped attack_source to get here
+                # this will cause redundant ways to get to the same state
+                if verbose: print("Agent tried illegal skip during attack target phase")
+                return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
+
+            to_terr = self.territories[action]
+            # if invalid
+            if (to_terr not in self.from_terr.neighbors or to_terr.owner == self.agent):
+                self.phase = attack_source_phase
+                self.from_terr = None
+                self.prev_move = len(self.territories)
+                # reward = self.get_reward(illegal=True)
+                return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
+            else:
+                other_player = to_terr.owner
+                attacking_army_size = self.from_terr.troop_count - 1
+                troops_lost_attacker, _, attacker_won, is_legal = attack_territory(
+                    self.from_terr, to_terr, attacking_army_size, self.players,
+                    reduce_kurtosis=False, verbose=False)
+                self.agent_troop_gain -= troops_lost_attacker  # 0 if illegal
+                self.from_terr = None
+                self.phase = attack_source_phase  # can keep attacking if desired
+
+                if not is_legal:
+                    if verbose: print("Agent tried illegal attack")
                     return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
+                if not self.agent_gets_card and attacker_won:
+                    self.agent_gets_card = True
+                    self.agent_troop_gain += self.CARD_TROOP_VALUE
+                if attacker_won and other_player.territory_count == 0:
+                    self.agent_troop_gain += self.CARD_TROOP_VALUE * other_player.hand.count
+                    self.players_agent_eliminated += 1
+                    take_cards(self.agent, other_player)
+                    if self.agent.hand.count >= 5:
+                        self.phase = placement_phase
+                        self.recurrence = True
+                        trade_cards(self.agent)
+                        self.troops = self.agent.placeable_troops
+                    self.agent_game_ended = (self.agent.territory_count == len(self.territories))
+
+                # if the Agent won the game
+                if self.agent_game_ended:
+                    self.phase = placement_phase  # should not do anything...
+                    reward = self.get_reward()
+                    return self.get_state(), reward, self.agent_game_ended, False, {}
                 else:
-                    self.prev_move = action
-                    self.from_terr = from_terr
-                    self.phase = attack_target_phase
                     reward = 0
                     if self.phasic_credit_assignment: reward = self.get_reward()
                     return self.get_state(), reward, self.agent_game_ended, False, {}
-            elif self.phase == attack_target_phase:
-                to_terr = self.territories[action]
-                # if invalid
-                if (to_terr not in self.from_terr.neighbors or to_terr.owner == self.agent):
-                    self.phase = attack_source_phase
-                    self.from_terr = None
-                    self.prev_move = len(self.territories)
-                    reward = self.get_reward(illegal=True)
-                    return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
-                else:
-                    other_player = to_terr.owner
-                    attacking_army_size = self.from_terr.troop_count - 1
-                    troops_lost_attacker, _, attacker_won, is_legal = attack_territory(
-                        self.from_terr, to_terr, attacking_army_size, self.players,
-                        reduce_kurtosis=False, verbose=False)
-                    self.agent_troop_gain -= troops_lost_attacker #0 if illegal
-                    self.from_terr = None
-                    self.phase = attack_source_phase #can keep attacking if desired
 
-                    if not is_legal:
-                        if(verbose): print("Agent tried illegal attack")
-                        return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
-                    if not self.agent_gets_card and attacker_won:
-                        self.agent_gets_card = True
-                        self.agent_troop_gain += self.CARD_TROOP_VALUE
-                    if attacker_won and other_player.territory_count == 0:
-                        self.agent_troop_gain += self.CARD_TROOP_VALUE * other_player.hand.count
-                        self.players_agent_eliminated += 1
-                        take_cards(self.agent, other_player)
-                        if self.agent.hand.count >= 5:
-                            self.phase = placement_phase
-                            self.recurrence = True
-                            trade_cards(self.agent)
-                            self.troops = self.agent.placeable_troops
-                        self.agent_game_ended = (self.agent.territory_count == len(self.territories))
-
-                    #if the Agent won the game
-                    if self.agent_game_ended:
-                        self.phase = placement_phase # should not do anything...
-                        reward = self.get_reward()
-                        return self.get_state(), reward, self.agent_game_ended, False, {}
-                    else:
-                        reward = 0
-                        if self.phasic_credit_assignment: reward = self.get_reward()
-                        return self.get_state(), reward, self.agent_game_ended, False, {}
-
-        def handle_fortify_phase(self, action):
+        def handle_fortify_source_phase(self, action):
             self.recurrence = False
-
-            if self.phase != fortify_to_phase and self.phase != fortify_from_phase:
-                raise "out of order phase handling"
+            if self.phase != fortify_source_phase:
+                raise "out of order phase handling found in call to handle_fortify_source_phase(self, action)"
 
             if self.agent_gets_card:
                 get_card(self.agent.hand)
                 self.agent_gets_card = False
 
             if action == skip_action:
-                self.phase = placement_phase
                 reward = 0
-                if self.phasic_credit_assignment: reward = self.get_reward()
+                self.phase = placement_phase
 
-            if self.phase == fortify_from_phase:
+            # attempting an illegal fortify
+            if self.phase == fortify_source_phase:
                 from_terr = self.territories[action]
-
-                #attempting an illegal fortify
                 if (from_terr.owner != self.agent or from_terr.troop_count < 2):
-                    self.phase = fortify_from_phase
-                    reward = self.get_reward(illegal=True)
+                    self.phase = fortify_source_phase
+                    # reward = self.get_reward(illegal=True)
                     return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
 
                 self.from_terr = from_terr
                 self.prev_move = action
-                self.phase = fortify_to_phase
+                self.phase = fortify_target_phase
                 reward = 0
-                if self.phasic_credit_assignment: reward = self.get_reward()
-
-            elif self.phase == fortify_to_phase:
-                to_terr = self.territories[action]
-                #attempting an illegal fortify
-                if (to_terr == self.from_terr or to_terr.owner != self.agent or to_terr not in fortify_bfs(self.from_terr)):
-                    self.phase = fortify_from_phase
-                    self.from_terr = None
-                    reward = self.get_reward(illegal=True)
-                else:
-                    troops = self.from_terr.troop_count - 1
-                    fortify(self.from_terr, to_terr, troops)
-                    self.from_terr = None
-                    self.phase = placement_phase
-                    reward = 0
 
             if self.phase == placement_phase:
                 state, new_reward, terminated, truncated, info = self.handle_other_players()
@@ -380,13 +375,48 @@ class RiskEnvFlat(gym.Env):
                 state, new_reward, terminated, truncated, info = self.get_state(), 0, self.agent_game_ended, False, {}
             return state, reward + new_reward, terminated, truncated, info
 
-        starting_phase = self.phase
+        def handle_fortify_target_phase(self, action):
+            self.recurrence = False
+            if self.phase != fortify_target_phase:
+                raise "out of order phase handling found in call to handle_fortify_target_phase(self, action)"
+
+            if action == skip_action:
+                # not letting agent skip fortify_target phase as it must've not skipped fortifysource to get here
+                # this will cause redundant ways to get to the same state
+                self.phase = fortify_source_phase
+                if verbose: print("Agent tried illegal skip during fortify phase")
+                return self.get_state(), self.invalid_move_penalty, self.agent_game_ended, False, {}
+
+            to_terr = self.territories[action]
+            # attempting an illegal fortify
+            if (to_terr == self.from_terr or to_terr.owner != self.agent or to_terr not in fortify_bfs(self.from_terr)):
+                self.phase = fortify_source_phase
+                self.from_terr = None
+                reward = self.get_reward(illegal=True)
+            else:
+                troops = self.from_terr.troop_count - 1
+                fortify(self.from_terr, to_terr, troops)
+                self.from_terr = None
+                self.phase = placement_phase
+                reward = 0
+
+            new_reward = 0
+            if self.phase == placement_phase:
+                state, new_reward, terminated, truncated, info = self.handle_other_players()
+            else:
+                state, new_reward, terminated, truncated, info = self.get_state(), 0, self.agent_game_ended, False, {}
+            return state, reward + new_reward, terminated, truncated, info
+
         if self.phase == placement_phase:
             return handle_placement_phase(self, action)
-        elif self.phase == attack_source_phase or self.phase == attack_target_phase:
-            return handle_attack_phase(self, action)
-        elif self.phase == fortify_from_phase or self.phase == fortify_to_phase:
-            return handle_fortify_phase(self, action)
+        elif self.phase == attack_source_phase:
+            return handle_attack_source_phase(self, action)
+        elif self.phase == attack_target_phase:
+            return handle_attack_target_phase(self, action)
+        elif self.phase == fortify_source_phase:
+            return handle_fortify_source_phase(self, action)
+        elif self.phase == fortify_target_phase:
+            return handle_fortify_target_phase(self, action)
         else:
             raise "impossible phase reached"
 
@@ -431,7 +461,7 @@ def get_state(players, board, agents_phase, troops, turns_passed, previous_move)
     max_troops = max([abs(x) for x in agent_troops])
     agent_troops = [troop_count / max_troops for troop_count in agent_troops]
 
-    can_move = [can_attack(players[0], board), can_fortify(players[0], board)]
+    can_move = [can_attack(players[0], board, agents_phase), can_fortify(players[0], board, agents_phase)]
 
     state = phases + agent_troops + can_move + [previous_move]
 
@@ -512,7 +542,7 @@ class DQNAgent:
         if len(self.memory) < self.batch_size:
             return
 
-        batch = random.choices(self.memory, k=self.batch_size)
+        batch = random.sample(self.memory, self.batch_size)
         state_batch, action_batch, reward_batch, next_state_batch, term_batch, trunc_batch = zip(*batch)
 
         state_batch = torch.FloatTensor(np.array(state_batch)).to(self.device)
