@@ -48,5 +48,5 @@ Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/20
 - Robert Kiesler
 - Ashish Panchal 
 
-  Transferred on GaTech's private repository to this public repository on June 10th, 2024
+  Transferred from GaTech's private repository to this public repository on June 10th, 2024
 
