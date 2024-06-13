@@ -13,9 +13,7 @@
 <img width="605" alt="Screenshot_2023-08-01_at_4 27 59_PM" src="https://github.gatech.edu/storage/user/51858/files/8c062e17-e3ad-4aa2-9270-8d3f4e9d4ce1">
 
   - A critical aspect is handling of illegal moves. It is up to the user to decide how to handle illegal moves. It is a core problem because the majority of moves are illegal from any given state, especially in the attack or fortify phase if the Agent has already selected a "FROM" territory. The current default is to not change the state and apply a large penalty but we have found this highly problematic. There is research on this topic: [Learn What Not to Learn: Action Elimination with
-Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/2018/file/645098b086d2f9e1e0e939c27f9f2d6f-Paper.pdf)
-
-  - Last updated 08/02/23      
+Deep Reinforcement Learning](https://proceedings.neurips.cc/paper_files/paper/2018/file/645098b086d2f9e1e0e939c27f9f2d6f-Paper.pdf) 
   
 ## Areas of improvement       
 
