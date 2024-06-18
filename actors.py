@@ -87,8 +87,7 @@ class Random_Bot(Player):
             to_owner = to_terr.owner
             attacking_army_size = from_terr.troop_count - 1
             troops_lost_attacker, _, attacker_won, is_legal = attack_territory(
-                attack_from_territory, to_terr, attacking_army_size, players,
-                reduce_kurtosis=False, verbose=False)
+                attack_from_territory, to_terr, attacking_army_size, verbose=False)
             result = "lost"
             if attacker_won: result = "won"
             if verbose: print(f"{self.name} attacked {to_terr.name} and {result}")

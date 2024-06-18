@@ -1,27 +1,18 @@
 import gym
-
 import numpy as np
 import random
 from random import seed
 from gym.spaces import Box, Discrete
-
 from collections import deque
-import random
-
 
 from board import create_board, fortify_bfs, create_graph, display_graph, create_board_test
 from atomic_actions import attack_territory, place_troops, take_cards, trade_cards, fortify, get_troops, get_card
 
-#Rk Added
-import gym
-import numpy as np
-import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
-from collections import deque
 
 
 def can_attack(player, territories, agents_phase):
@@ -310,8 +301,7 @@ class RiskEnvFlat(gym.Env):
                 other_player = to_terr.owner
                 attacking_army_size = self.from_terr.troop_count - 1
                 troops_lost_attacker, _, attacker_won, is_legal = attack_territory(
-                    self.from_terr, to_terr, attacking_army_size, self.players,
-                    reduce_kurtosis=False, verbose=False)
+                    self.from_terr, to_terr, attacking_army_size, verbose=False)
                 self.agent_troop_gain -= troops_lost_attacker  # 0 if illegal
                 self.from_terr = None
                 self.phase = attack_source_phase  # can keep attacking if desired

@@ -3,12 +3,13 @@ import numpy as np
 import math
 import time
 
-#This .py defines actions the Agent may take at a micro level, as opposed to
-#macro level decisions that may involve graph pathing
+#This .py defines actions the Agent may take at an atomic level, as opposed to
+#macro level decisions (i.e that may involve graph pathing algorithms)
 
 #is_legal here is expected to check if something is physically possible.
-#the legality of when a move is made is left in the responsibility of the
+#the legality of WHEN an action is taken is left in the responsibility of the
 #simulation calling these methods
+
 
 #rolls the dice X,Y times and subsorts the dice rolls in a manner congruent with
 #risk dice rolling. I.e, 3 attacker and 2 defender dice per battle if there
@@ -30,6 +31,7 @@ def get_dice_rolls(attacker_troops, defender_troops, verbose=False):
 
     return attacker_rolls, defender_rolls
 
+# If there are a lot of troops that are going to battle, roll the dice many times ahead of time
 def get_dice_bag(attacker_troops, defender_troops, verbose=False):
 
     low = min(attacker_troops, defender_troops)
@@ -59,7 +61,9 @@ def get_dice_bag(attacker_troops, defender_troops, verbose=False):
     return attacker_rolls, defender_rolls, bag_size
 
 
-def attack_territory(from_territory, to_territory, troops_to_attack_with, players,  reduce_kurtosis=False, verbose=False):
+#if the Agent wants to attack territory B from territory A, what happens?
+#this function is complicated/convoluted and could be improved
+def attack_territory(from_territory, to_territory, troops_to_attack_with, verbose=False):
     is_legal = False
     troops_lost_attacker = 0
     troops_lost_defender = 0
@@ -80,7 +84,7 @@ def attack_territory(from_territory, to_territory, troops_to_attack_with, player
         return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
 
     # A territory cannot have less than 1 troop. When an attack is made, 1 troop
-    # less than the total troops are usable
+    # less than the total troops are usable. However, this is arguably invalid more so than illegal
     if from_territory.troop_count < 2:
         if(verbose): print("attack_territory was requested, but not enough available troops to make any attack")
         return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
@@ -101,8 +105,6 @@ def attack_territory(from_territory, to_territory, troops_to_attack_with, player
     # or the defender doesnt have at least 2 troops
 
     bag_size = 0
-    attacker_dice = 0
-    defender_dice = 0
     i = 0
     j = 0
     while defender_troops > 0 and troops_to_attack_with > 0:
@@ -207,6 +209,7 @@ def get_troops(player, territories):
     player.placeable_troops += new_troops
 
 # Get random card
+# The deck of cards in Risk does correspond directly to the (42) territories on the board
 def get_card(hand):
     card = random.randint(0, 43)
     hand.count += 1
@@ -229,8 +232,9 @@ def take_cards(player1, player2):
     hand1.count += hand2.count
 
 #returns how many troops the Agent could get by trading
-#territory bonus omitted for simplicity
+#card territory bonus omitted for simplicity
 def check_cards(hand):
+    # dont trade the wild for the highest trade if that can be avoided
     best_trade_uses_wild = False
 
     #cant trade with less than 3 cards
@@ -266,6 +270,9 @@ def check_cards(hand):
 
 #given a hand, trades for the highest number of possible troops
 #stacking the deck as a strategy is omitted for simplicty
+#
+# this function is more convoluted than necessary
+# should just be trade_cards(player) for maximum possible troops
 def trade_cards(player, troops_to_trade_for=0, uses_wild=False, already_checked_legality=False):
     hand = player.hand
     if not already_checked_legality:

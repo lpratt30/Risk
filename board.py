@@ -1,7 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
-from actors import Player, Hand, TFT_Bot, Random_Bot, Neutral_Bot
+from actors import Player, Hand, Random_Bot, Neutral_Bot
 
 pos = {
     'Alaska': (0, 10),
