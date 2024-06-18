@@ -116,9 +116,7 @@ def simulate_game(num_players, bot_types):
                 # Attack the territory, from the atomic_actions.py file
                 other_player = to_territory.owner
                 _, _, attacker_won, is_legal = attack_territory(
-                    from_territory, to_territory, troops_to_attack_with,
-                    players, reduce_kurtosis=False, verbose=False
-                )
+                    from_territory, to_territory, troops_to_attack_with, verbose=False)
 
                 assert(is_legal)
 
