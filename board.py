@@ -73,44 +73,6 @@ class Continent:
         if territory not in self.territories:
             self.territories.append(territory)
 
-# not rlly used but this sort of management could reduce env code length if implemented
-class Turns:
-    def __init__(self, num_players_remaining, turn_order):
-        self.turn_order = turn_order
-        self.turn = turn_order[0]
-        self.num_turns = num_players
-        self.phase_definition = {
-            0: "cards",
-            1: "placement",
-            2: "attack",
-            3: "fortify"
-        }
-        self.phase = 0
-
-    def advance_phase(self):
-        if(self.phase < 4):
-            self.phase += 1
-        return self.phase, self.phases[self.phase]
-
-    # its possible a player gets eliminated during turn, so num_players must be an argument
-    def end_turn(self, num_players):
-        self.turn = (self.turn + 1) % num_players
-        self.phase = "cards"
-        return
-
-
-    # completes the fortify turn as specified by the Agent
-    def fortify(player, phase, from_key, to_key):
-        # is the selected path legal/connected? the path must only be of player color
-        # returns False if illegal
-        return
-
-    def attack(player, troops_to_commit, from_key, to_key):
-        # find the shortest path of non-player owned territories between from and to
-        # commit X troops to full succsess
-        # returns troops_lost, is_legal, did_win
-        return
-
 
 
 def initialize(territories, players, player_colors):
