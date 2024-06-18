@@ -126,7 +126,7 @@ def main(env_name, num_episodes=2000, save_interval=100, load_model=False):
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
 
-    output_dir = config["experiment_name"]
+    output_dir = "experiment_results/" + config["experiment_name"]
     checkpoint_path = Path(f'{output_dir}/checkpoints')
     checkpoint_path.mkdir(parents=True, exist_ok=True)
 
