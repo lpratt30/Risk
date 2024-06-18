@@ -198,8 +198,8 @@ def place_troops(player, territory, troops):
 def get_troops(player, territories):
     territories_owned = [i for i, owned in enumerate(player.territories) if owned]
     territories_owned_obj = [territories[i] for i in territories_owned]
-    # new_troops = max(3, len(territories_owned) // 3)
-    new_troops = 3 + len(territories_owned)
+    # new_troops = max(3, len(territories_owned) // 3) # this is how it works in Risk (plus additional troops for bonuses) 
+    new_troops = 3 + len(territories_owned) # this is a more aggressive version to encourage aggressive play 
     continents_map = {}
     for t in territories_owned_obj:
         continents_map[t.continent] = continents_map.get(t.continent, 0) + 1
