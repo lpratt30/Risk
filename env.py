@@ -18,24 +18,27 @@ from torch.autograd import Variable
 def can_attack(player, territories, agents_phase):
     if agents_phase != 1 and agents_phase != 2:
         return False
-    territories_owned = [i for i, owned in enumerate(player.territories) if owned]
-    territories_owned_obj = [territories[i] for i in territories_owned]
-    
-    for t in territories_owned_obj:
-        if t.troop_count > 1:
-            for n in t.neighbors:
-                if n.owner != t.owner:
+
+    for i in range(len(player.territories)):
+        if not player.territories[i]:
+            continue
+        t_obj = territories[i]
+        if t_obj.troop_count > 1:
+            for n in t_obj.neighbors:
+                if n.owner != t_obj.owner:
                     return True
     return False
+
 
 def can_fortify(player, territories, agents_phase):
     if agents_phase != 3 and agents_phase != 4:
         return False
-    territories_owned = [i for i, owned in enumerate(player.territories) if owned]
-    territories_owned_obj = [territories[i] for i in territories_owned]
 
-    for t in territories_owned_obj:
-        if t.troop_count > 1 and len(fortify_bfs(t)) > 0:
+    for i in range(len(player.territories)):
+        if not player.territories[i]:
+            continue
+        t_obj = territories[i]
+        if t_obj.troop_count > 1 and len(fortify_bfs(t_obj)) > 0:
             return True
     return False
 

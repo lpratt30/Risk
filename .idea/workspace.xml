@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ff024346-fe63-4676-91a1-bb0e67339fd9" name="Changes" comment="Increased modularity of the Agent's turn phases" />
+    <list default="true" id="ff024346-fe63-4676-91a1-bb0e67339fd9" name="Changes" comment="Increased modularity of the Agent's turn phases">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/env.py" beforeDir="false" afterPath="$PROJECT_DIR$/env.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -45,7 +48,7 @@
     "Python.simulation.executor": "Run",
     "Python.train.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "local",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -79,6 +82,7 @@
       <workItem from="1718054927901" duration="20787000" />
       <workItem from="1718130966116" duration="2635000" />
       <workItem from="1718675694619" duration="4646000" />
+      <workItem from="1718822407049" duration="25000" />
     </task>
     <task id="LOCAL-00001" summary="Increased modularity of the Agent's turn phases">
       <option name="closed" value="true" />
