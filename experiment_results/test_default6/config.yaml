@@ -1,8 +1,8 @@
 experiment_name: test_default6
 
-num_episodes: 100
+num_episodes: 2000
 max_actions: 2000
-save_interval: 2
+save_interval: 500
 
 num_players: 2
 size: 1

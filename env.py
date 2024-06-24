@@ -14,32 +14,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-
-def can_attack(player, territories, agents_phase):
-    if agents_phase != 1 and agents_phase != 2:
-        return False
-    territories_owned = [i for i, owned in enumerate(player.territories) if owned]
-    territories_owned_obj = [territories[i] for i in territories_owned]
-    
-    for t in territories_owned_obj:
-        if t.troop_count > 1:
-            for n in t.neighbors:
-                if n.owner != t.owner:
-                    return True
-    return False
-
-def can_fortify(player, territories, agents_phase):
-    if agents_phase != 3 and agents_phase != 4:
-        return False
-    territories_owned = [i for i, owned in enumerate(player.territories) if owned]
-    territories_owned_obj = [territories[i] for i in territories_owned]
-
-    for t in territories_owned_obj:
-        if t.troop_count > 1 and len(fortify_bfs(t)) > 0:
-            return True
-    return False
-
-
 class RiskEnvFlat(gym.Env):
     def __init__(self, env_config=None):
         if env_config is None:
@@ -451,9 +425,7 @@ def get_state(players, board, agents_phase, troops, turns_passed, previous_move)
     max_troops = max([abs(x) for x in agent_troops])
     agent_troops = [troop_count / max_troops for troop_count in agent_troops]
 
-    can_move = [can_attack(players[0], board, agents_phase), can_fortify(players[0], board, agents_phase)]
-
-    state = phases + agent_troops + can_move + [previous_move]
+    state = phases + agent_troops + [previous_move]
 
     # Convert the state to a numpy array and reshape it to match the DQN agent's state shape
     state = np.array(state, dtype="float32")
