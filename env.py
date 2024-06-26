@@ -14,6 +14,14 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+
+######################################### Main Notes #########################################
+# This is the game of Risk defined as an OpenAI gym env. It depends on board.py and actors.py
+# 
+# The beefiest part of this is the step function, which defines how the environment is interacted
+# with by the Agent and bots, as well as how the environment transitions and changes 
+##############################################################################################
+
 class RiskEnvFlat(gym.Env):
     def __init__(self, env_config=None):
         if env_config is None:
