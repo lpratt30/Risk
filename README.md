@@ -5,8 +5,7 @@
 
 ## To Run 
 
-- If you have the requirements satisfied in requirements.txt, you can run train.py and it will train in Agent
-- in the settings defined in training_config.yaml 
+- If you have the requirements satisfied in requirements.txt, you can run train.py and it will train in Agent in the settings defined in training_config.yaml 
 
 ## About          
   - This is Risk represented as a bi-directional graph. It also has 2 basic bots implemented (neutral, low skilled) and an interface for configuring and training a DDQN
