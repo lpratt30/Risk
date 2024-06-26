@@ -3,12 +3,14 @@ import numpy as np
 import math
 import time
 
-#This .py defines actions the Agent may take at an atomic level, as opposed to
-#macro level decisions (i.e that may involve graph pathing algorithms)
 
-#is_legal here is expected to check if something is physically possible.
-#the legality of WHEN an action is taken is left in the responsibility of the
-#simulation calling these methods
+######################################### Main Notes #########################################
+# This .py defines functions required for the fundamental mechanics behind the game of Risk 
+# 
+# is_legal in this .py is expected to check if something is physically possible.
+# i.e, troops cannot teleport. the legality of WHEN a function is used is left in 
+# the responsibility of the environment calling them
+##############################################################################################
 
 
 #rolls the dice X,Y times and subsorts the dice rolls in a manner congruent with
