@@ -3,6 +3,11 @@
 
 ![image](https://github.gatech.edu/storage/user/51858/files/5b3f41d7-a1e0-4910-b725-0b9973f7034e)
 
+## To Run 
+
+- If you have the requirements satisfied in requirements.txt, you can run train.py and it will train in Agent
+- in the settings defined in training_config.yaml 
+
 ## About          
   - This is Risk represented as a bi-directional graph. It also has 2 basic bots implemented (neutral, low skilled) and an interface for configuring and training a DDQN
   - There are several Jupyer notebooks to show bot and environment functionality, as well as simulation.py which randomly runs a game until completion
