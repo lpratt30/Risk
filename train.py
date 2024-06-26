@@ -13,6 +13,15 @@ import os
 import statistics
 import shutil
 
+######################################### Main Notes #########################################
+# This .py controls the training process by using the parameters defined in training_config.yaml 
+# It is the main .py which depends upon all other core .py's 
+#
+# Structually, the Agent is defined in the env.py and then is initialized here 
+# It may arguably make more sense for the Agent to instead be defined here, because the Agent's 
+# optimize method is a core part of the training process 
+##############################################################################################
+
 
 def evaluate(agent, env, max_actions=500, num_eval=1, show_board=False):
     for i in range(num_eval):
