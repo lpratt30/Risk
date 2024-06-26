@@ -15,11 +15,13 @@ import shutil
 
 ######################################### Main Notes #########################################
 # This .py controls the training process by using the parameters defined in training_config.yaml 
-# It is the main .py which depends upon all other core .py's 
+# It is the main .py which depends upon all other core .py's. It should run and produce results 
+# in the dir experiment_results; if you're new to this codebase you should be here running this
 #
 # Structually, the Agent is defined in the env.py and then is initialized here 
 # It may arguably make more sense for the Agent to instead be defined here, because the Agent's 
-# optimize method is a core part of the training process 
+# optimize method is a core part of the training process. However, Agent is also part of Risk
+# environment! 
 ##############################################################################################
 
 
