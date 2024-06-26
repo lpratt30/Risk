@@ -2,6 +2,14 @@ from operator import itemgetter
 import random
 from atomic_actions import get_troops, place_troops, attack_territory, fortify, trade_cards, get_card, take_cards
 
+######################################### Main Notes #########################################
+# This .py defines Risk players as either an RL Agent (Player) or as a type of hard-coded opponent
+# 
+#  Legality of *when* to make a move is left up to the simulation calling these bots
+#  Otherwise, these methods will not make physically illegal moves as defined by atomic_actions.py
+#  if they attempt an illegal move, they should raise exception 
+##############################################################################################
+
 class Player:
     def __init__(self, color, turn_order, num_territories):
         self.name = color
@@ -33,9 +41,7 @@ class Hand:
         self.wild = 0
         self.count = 0
 
-#The legality of *when* to make a move is left up to the simulation calling these bots
-#Otherwise, these methods will not make physically illegal moves as defined by atomic_actions.py
-#if they have a bug, they return False, and the main environment should cease execution
+
 
 
 #Tit-for-tat strategy
