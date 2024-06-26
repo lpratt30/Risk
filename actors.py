@@ -5,9 +5,11 @@ from atomic_actions import get_troops, place_troops, attack_territory, fortify, 
 ######################################### Main Notes #########################################
 # This .py defines Risk players as either an RL Agent (Player) or as a type of hard-coded opponent
 # 
-#  Legality of *when* to make a move is left up to the simulation calling these bots
-#  Otherwise, these methods will not make physically illegal moves as defined by atomic_actions.py
+#  These methods should not make physically illegal moves as defined by atomic_actions.py
 #  if they attempt an illegal move, they should raise exception 
+#
+# The hard-coded opponents do each control their own progression through turn-phases, 
+# which is a potential area for bugs as there are no checks on their turn-progression 
 ##############################################################################################
 
 class Player:
