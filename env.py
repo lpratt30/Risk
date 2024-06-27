@@ -6,7 +6,7 @@ from gym.spaces import Box, Discrete
 from collections import deque
 
 from board import create_board, fortify_bfs, create_graph, display_graph, create_board_test
-from atomic_actions import attack_territory, place_troops, take_cards, trade_cards, fortify, get_troops, get_card
+from atomic_actions import attack_territory, place_troops, take_cards, trade_cards, fortify, generate_troops, get_card
 
 import torch
 import torch.nn as nn
@@ -96,7 +96,7 @@ class RiskEnvFlat(gym.Env):
         self.agent.cumulative_reward = 0
         self.agent.positive_reward_only = 0
         self.agent.negative_reward_only = 0
-        get_troops(self.agent, self.territories)
+        generate_troops(self.agent, self.territories)
         self.troops = self.agent.placeable_troops
         return self.get_state(), {}
 
@@ -213,7 +213,7 @@ class RiskEnvFlat(gym.Env):
 
             #are we in placement phase because of a player elimination? dont get troops
             if not self.recurrence:
-                get_troops(self.agent, self.territories)
+                generate_troops(self.agent, self.territories)
                 assert(self.agent.placeable_troops != 0)
 
             #wait until 5 cards to trade because trades are higher (sans a more nuanced strategy)
