@@ -59,7 +59,7 @@ class Random_Bot(Player):
     def make_move(self, players, territories, verbose=False):
 
         if self.territory_count < 1:
-            raise "Trying to make move from dead bot"
+            raise Exception("Trying to make move from dead bot")
 
 
         def handle_placement_phase(self, place_on = None):
