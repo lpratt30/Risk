@@ -12,37 +12,15 @@ import time
 # the responsibility of the environment calling them
 ##############################################################################################
 
-
-#rolls the dice X,Y times and subsorts the dice rolls in a manner congruent with
-#risk dice rolling. I.e, 3 attacker and 2 defender dice per battle if there
-#are enough troops to do so.
-def get_dice_rolls(attacker_troops, defender_troops, verbose=False):
-
-    attacker_dice_count = min(3, attacker_troops)
-    defender_dice_count = min(2, defender_troops)
-
-    attacker_rolls = np.random.randint(1, 7, attacker_dice_count)
-    attacker_rolls = sorted(attacker_rolls, reverse = True)
-
-    defender_rolls = np.random.randint(1, 7, defender_dice_count)
-    defender_rolls = sorted(defender_rolls, reverse = True)
-
-    if verbose:
-        print("\nAttacker rolls: " + str(attacker_rolls))
-        print("Defender rolls: " + str(defender_rolls))
-
-    return attacker_rolls, defender_rolls
-
-# If there are a lot of troops that are going to battle, roll the dice many times ahead of time
+# Could be optimized, but is not currently a significant performance impact. Optimizations may include generating all
+# dice for a single episode at once, generate enough dice to complete a full attack at once, re-use dice for multiple
+# episodes (randomly change start index), etc, but all of that would complicate the code with index tracking
 def get_dice_bag(attacker_troops, defender_troops, verbose=False):
-
-    low = min(attacker_troops, defender_troops)
-    bag_size = low * 5
-    attacker_dice = low * 3
-    defender_dice = low * 2
+    attacker_dice = attacker_troops
+    defender_dice = defender_troops
+    bag_size = attacker_dice + defender_dice
 
     dice_rolls = np.random.randint(1, 7, bag_size)
-
     #https://stackoverflow.com/questions/3668930/sorting-a-sublist-within-a-python-list-of-integers
     # sort every group of 3 in the attacker's portion
     for i in range(0, attacker_dice, 3):
@@ -55,97 +33,62 @@ def get_dice_bag(attacker_troops, defender_troops, verbose=False):
     attacker_rolls = dice_rolls[:attacker_dice]
     defender_rolls = dice_rolls[attacker_dice:]
 
-    if(verbose):
-        print("")
-        print("Attacker rolls: " + str(attacker_rolls))
-        print("Defender rolls: " + str(defender_rolls))
+    if verbose: print("\nAttacker rolls: " + str(attacker_rolls) + "\nDefender rolls: " + str(defender_rolls) + "\n")
 
     return attacker_rolls, defender_rolls, bag_size
 
 
-#if the Agent wants to attack territory B from territory A, what happens?
-#this function is complicated/convoluted and could be improved
+# if the Agent/bot wants to attack territory B from territory A, what happens?
 def attack_territory(from_territory, to_territory, troops_to_attack_with, verbose=False):
-    is_legal = False
+    defender_troops = to_territory.troop_count
     troops_lost_attacker = 0
     troops_lost_defender = 0
+    is_legal = False
     attacker_won = False
-    defender_troops = to_territory.troop_count
 
-    pre_battle_troops = (from_territory.troop_count, to_territory.troop_count) #track how many troops get lost
-
-
+    pre_battle_troops = (from_territory.troop_count, defender_troops)   # track how many troops get lost
     if (verbose): print("attack_territory " + to_territory.name + " from " + from_territory.name + " requested with " + str(troops_to_attack_with) + " troops")
 
-    #confirm territories are directly connected
-    if(to_territory.name not in from_territory.neighbor_names):
-        if(verbose): print("attack_territory requsted for non-adjacent territories")
+    if to_territory.name not in from_territory.neighbor_names:
+        if verbose: print("attack_territory requested for non-adjacent territories")
         return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
-    if(from_territory.owner_color == to_territory.owner_color):
-        if(verbose): print("attack_territory requested for players own territory")
+    if from_territory.owner.key == to_territory.owner.key:
+        if verbose: print("attack_territory requested for player's own territory")
         return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
-
-    # A territory cannot have less than 1 troop. When an attack is made, 1 troop
-    # less than the total troops are usable. However, this is arguably invalid more so than illegal
+    # attacker must leave behind 1 troop at all times, so 2 or more troops are needed to attack.
+    # this is arguably invalid more so than illegal
     if from_territory.troop_count < 2:
         if(verbose): print("attack_territory was requested, but not enough available troops to make any attack")
         return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
 
     is_legal = True
-    if (troops_to_attack_with >= from_territory.troop_count):
+    if troops_to_attack_with >= from_territory.troop_count:
         troops_to_attack_with = from_territory.troop_count - 1 # attack with at most 1 less troop than in the territory
         if(verbose): print("Attacking with troops: " + str(troops_to_attack_with))
 
-    # attacker rolls their dice and so does defender. the highest dice
-    # are compared from both attacker and defender. the defender wins ties.
-    # for each dice roll won, the opponent loses 1 troop. the attacker can then
-    # choose to continue rolling dice or not. Here, the attacker fully commits
-    # as many troops as have been passed into the function, allowing to vectorize
-    # the dice rolling process for efficiency
-
-    # 3 v 2 dice are rolled unless the attacker doesnt have at least 3 troops
-    # or the defender doesnt have at least 2 troops
-
-    bag_size = 0
-    i = 0
-    j = 0
+    # The highest dice are compared from both attacker and defender. the defender wins ties. for each dice roll won,
+    # the other opponent loses 1 troop. the attacker can then choose to continue rolling dice or not. Here, the
+    # attacker fully commits as many troops as have been passed into the function to simplify the environment by
+    # avoiding a continuous action space. This  is also commonly done online
+    #
+    # 3 v 2 dice are rolled, unless the attacker doesnt have at least 3 troops, or the defender at least 2 troops
+    attacker_rolls, defender_rolls, bag_size = get_dice_bag(troops_to_attack_with, defender_troops, verbose)
+    i, j = 0, 0
     while defender_troops > 0 and troops_to_attack_with > 0:
-
-        attacker_dice = min(3, troops_to_attack_with)
-        defender_dice = min(2, defender_troops)
-        least_dice = min(attacker_dice, defender_dice)
-
-        if(bag_size < (defender_troops + troops_to_attack_with) and (attacker_dice + defender_dice) > 4):
+        if bag_size < 5 and troops_to_attack_with + defender_troops > bag_size:
+            i, j = 0, 0
             attacker_rolls, defender_rolls, bag_size = get_dice_bag(troops_to_attack_with, defender_troops, verbose)
-            i = 0
-            j = 0
 
-        if(attacker_dice < 3 or defender_dice < 2):
-            # if we continue to use dicebag, but dicebag generated and sorted more items than the attacker/defender should have,
-            # the statistical output will favor the outcome of the player with less dice more than it should
-            attacker_rolls, defender_rolls = get_dice_rolls(troops_to_attack_with, defender_troops, verbose)
-            bag_size = (troops_to_attack_with + defender_troops)
-            i = 0
-            j = 0
-
-        if attacker_rolls[i] > defender_rolls[j]:
-            defender_troops -= 1
-        else:
-            troops_to_attack_with -= 1
-
-        if least_dice > 1:
-            if attacker_rolls[i + 1] > defender_rolls[j + 1]:
-                defender_troops -= 1
-            else:
-                troops_to_attack_with -= 1
-        if(verbose):
-            print("Attacker Troops: " + str(troops_to_attack_with))
-            print("Defender Troops: " + str(defender_troops))
-
+        for k in range(2):
+            if i + k < len(attacker_rolls) and j + k < len(defender_rolls):
+                if attacker_rolls[i + k] > defender_rolls[j + k]:
+                    defender_troops -= 1
+                else:
+                    troops_to_attack_with -= 1
         bag_size -= 5
-        i +=3
-        j +=2
-
+        i += 3
+        j += 2
+        if verbose: print("Attacker Troops: " + str(troops_to_attack_with) + ", Defender Troops: " + str(defender_troops))
 
     troops_lost_attacker = (pre_battle_troops[0] - 1) - troops_to_attack_with
     troops_lost_defender = pre_battle_troops[1] - defender_troops
@@ -161,7 +104,7 @@ def attack_territory(from_territory, to_territory, troops_to_attack_with, verbos
         # transfer of owner occurs
         attacker_won = True
 
-        from_territory.troop_count = 1 # transfer 100% of troops except 1 that wasn't used in attack
+        from_territory.troop_count = 1 # transfer 100% of troops except 1 that wasn't used in attack, this is a heuristic
         to_territory.troop_count = troops_to_attack_with
 
         # defender losses territory
@@ -171,7 +114,6 @@ def attack_territory(from_territory, to_territory, troops_to_attack_with, verbos
         # attacker gains territory
         to_territory.owner_color = from_territory.owner_color
         to_territory.owner = from_owner
-
         from_owner.territories[to_territory.key] = 1
         from_owner.territory_count += 1
 
@@ -180,24 +122,23 @@ def attack_territory(from_territory, to_territory, troops_to_attack_with, verbos
 
     from_owner.damage_dealt[to_owner.key] += troops_lost_defender
     to_owner.damage_received[from_owner.key] += troops_lost_defender
-    from_owner.total_troops  -= troops_lost_attacker
+    from_owner.total_troops -= troops_lost_attacker
     to_owner.total_troops -= troops_lost_defender
 
-    if(verbose): print("")
-    if(verbose): print("Results of attack_territory- Attacker troops lost: " + str(troops_lost_attacker) + "  Defender troops lost: " + str(troops_lost_defender))
+    if verbose: print("\nResults of attack_territory- Attacker troops lost: " + str(troops_lost_attacker) + "  Defender troops lost: " + str(troops_lost_defender))
     return troops_lost_attacker, troops_lost_defender, attacker_won, is_legal
 
 def place_troops(player, territory, troops):
     # does the player have enough troops and is this territory owned by player?
     is_legal = False
-    if(territory.owner == player and troops <= player.placeable_troops):
+    if territory.owner == player and troops <= player.placeable_troops:
         player.total_troops += troops
         territory.troop_count += troops
         player.placeable_troops -= troops
         is_legal = True
     return is_legal
 
-def get_troops(player, territories):
+def generate_troops(player, territories):
     territories_owned = [i for i, owned in enumerate(player.territories) if owned]
     territories_owned_obj = [territories[i] for i in territories_owned]
     # new_troops = max(3, len(territories_owned) // 3) # this is how it works in Risk (plus additional troops for bonuses) 
@@ -211,9 +152,9 @@ def get_troops(player, territories):
     player.placeable_troops += new_troops
 
 # Get random card
-# The deck of cards in Risk does correspond directly to the (42) territories on the board
+# The deck of cards in Risk does correspond directly to the (42 on classic map) territories on the board. 2 wild cards
 def get_card(hand):
-    card = random.randint(0, 43)
+    card = random.randint(0, 43)        # randint is inclusive of upperbounds as opposed to np.random.randit
     hand.count += 1
     if 0 <= card < 14:
         hand.soldier += 1
@@ -270,22 +211,24 @@ def check_cards(hand):
             return 10, best_trade_uses_wild
     return 0, best_trade_uses_wild
 
-#given a hand, trades for the highest number of possible troops
-#stacking the deck as a strategy is omitted for simplicty
+# given a hand, trades for the highest number of possible troops
+# stacking the deck as a strategy is omitted for simplicity
 #
-# this function is more convoluted than necessary
-# should just be trade_cards(player) for maximum possible troops
-def trade_cards(player, troops_to_trade_for=0, uses_wild=False, already_checked_legality=False):
+# this function currently assumes the player never needs 2 wild cards to use for the trade. That can happen
+# but is exceedingly rare, however that could get a fix (but it will make code longer)
+def trade_cards(player):
     hand = player.hand
-    if not already_checked_legality:
-        troops_to_trade_for, uses_wild = check_cards(hand)
+    troops_to_trade_for, uses_wild = check_cards(hand)
+    hand.count -= 3
+    if uses_wild:
+        hand.wild -= 1
     if troops_to_trade_for == 10:
+        player.placeable_troops += 10
         if not uses_wild:
             hand.artillery -= 1
             hand.cavalry -= 1
             hand.soldier -= 1
         else:
-            hand.wild -= 1
             troops = [(hand.soldier, 4), (hand.cavalry, 6), (hand.artillery, 8)]
             troops = [t for t in troops if t[0] > 0]
             troops.sort()
@@ -296,17 +239,21 @@ def trade_cards(player, troops_to_trade_for=0, uses_wild=False, already_checked_
                     hand.cavalry -= 1
                 else:
                     hand.artillery -= 1
-        player.placeable_troops += 10
     elif troops_to_trade_for == 8:
-        hand.artillery -= 3
         player.placeable_troops += 8
+        hand.artillery -= 2
+        if not uses_wild:
+            hand.artillery -= 1
     elif troops_to_trade_for == 6:
-        hand.cavalry -= 3
         player.placeable_troops += 6
+        hand.cavalry -= 2
+        if not uses_wild:
+            hand.cavalry -= 1
     elif troops_to_trade_for == 4:
-        hand.soldier -= 3
         player.placeable_troops += 4
-    hand.count -= 3
+        hand.soldier -= 2
+        if not uses_wild:
+            hand.soldier -= 1
 
 def fortify(from_territory, to_territory, troop_count):
     if troop_count > from_territory.troop_count - 1:

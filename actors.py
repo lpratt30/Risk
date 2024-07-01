@@ -1,6 +1,6 @@
 from operator import itemgetter
 import random
-from atomic_actions import get_troops, place_troops, attack_territory, fortify, trade_cards, get_card, take_cards
+from atomic_actions import generate_troops, place_troops, attack_territory, fortify, trade_cards, get_card, take_cards
 
 ######################################### Main Notes #########################################
 # This .py defines Risk players as either an RL Agent (Player) or as a type of hard-coded opponent
@@ -59,7 +59,7 @@ class Random_Bot(Player):
     def make_move(self, players, territories, verbose=False):
 
         if self.territory_count < 1:
-            return True #trying to make attack from dead bot, just return
+            raise Exception("Trying to make move from dead bot")
 
 
         def handle_placement_phase(self, place_on = None):
@@ -127,7 +127,7 @@ class Random_Bot(Player):
         attacks_to_make = random.randint(attacks_minimum, attacks_maximum)
         attacks_made = 0
 
-        get_troops(self, territories)
+        generate_troops(self, territories)
 
         from_terr = handle_placement_phase(self)
         wins_card = False
@@ -157,7 +157,7 @@ class Neutral_Bot(Player):
         owned_territories = [i for i, t in enumerate(self.territories) if t == 1]
         #will never (practically, but it is possible for some online settings...) have cards to trade
         #will never eliminate a player
-        get_troops(self, territories)
+        generate_troops(self, territories)
         territory = random.choice(owned_territories)
         if verbose: print(f"{self.name} is placing {self.placeable_troops} in {territories[territory].name}")
         return place_troops(self, territories[territory], self.placeable_troops)
