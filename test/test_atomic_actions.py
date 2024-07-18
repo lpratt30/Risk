@@ -27,6 +27,16 @@ class TestGetDiceBag(unittest.TestCase):
         self.assertEqual(list(defender_rolls), [5, 4, 1])
 
     @patch('atomic_actions.np.random.randint')
+    # This is the test case where I found the code failed. I don't think the last 2 attacker dice should be sorted together with the first defender dice.
+    def test_attacker_rolls_sorted_complicated(self, mock_randint):
+        mock_randint.return_value = np.array([6, 6, 5, 2, 4, 1, 3, 1, 5, 2, 1, 4])
+        attacker_troops = 8
+        defender_troops = 4
+        attacker_rolls, defender_rolls, bag_size = get_dice_bag(attacker_troops, defender_troops)
+        self.assertEqual(list(attacker_rolls), [6, 6, 5, 4, 2, 1, 3, 1])
+        self.assertEqual(list(defender_rolls), [5, 2, 1, 4])
+
+    @patch('atomic_actions.np.random.randint')
     def test_defender_rolls_sorted(self, mock_randint):
         mock_randint.return_value = np.array([1, 2, 3, 4, 5, 6])
         attacker_troops = 3
