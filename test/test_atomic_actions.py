@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 import numpy as np
 
-from atomic_actions import get_dice_bag, attack_territory
+from atomic_actions import get_dice_bag, attack_territory, place_troops
 
 
 class TestGetDiceBag(unittest.TestCase):
@@ -141,6 +141,50 @@ class TestAttackTerritory(unittest.TestCase):
         self.assertEqual(troops_lost_attacker, 2)  # All attacker troops lost
         self.assertEqual(troops_lost_defender, 0)  # No defender troops lost
         self.assertFalse(attacker_won)
+
+class TestPlaceTroops(unittest.TestCase):
+    def setUp(self):
+        self.player = Mock()
+        self.player.total_troops = 10
+        self.player.placeable_troops = 5
+
+        self.territory_owned = Mock()
+        self.territory_owned.owner = self.player
+        self.territory_owned.troop_count = 2
+
+        self.territory_not_owned = Mock()
+        self.territory_not_owned.owner = None
+        self.territory_not_owned.troop_count = 3
+        
+    @patch('atomic_actions.place_troops')
+    def test_place_troops(self):
+        result = place_troops(self.player, self.territory_owned, 3)
+        self.assertTrue(result)
+        self.assertEqual(self.player.total_troops, 13)
+        self.assertEqual(self.territory_owned.troop_count, 5)
+        self.assertEqual(self.player.placeable_troops, 2)
+    
+    # To verity whether the followings work well
+    def test_place_troops_not_enough_troops(self):
+        result = place_troops(self.player, self.territory_owned, 6)
+        self.assertFalse(result)
+        self.assertEqual(self.player.total_troops, 10)
+        self.assertEqual(self.territory_owned.troop_count, 2)
+        self.assertEqual(self.player.placeable_troops, 5)
+
+    def test_place_troops_not_owner(self):
+        result = place_troops(self.player, self.territory_not_owned, 3)
+        self.assertFalse(result)
+        self.assertEqual(self.player.total_troops, 10)
+        self.assertEqual(self.territory_not_owned.troop_count, 3)
+        self.assertEqual(self.player.placeable_troops, 5)
+
+    def test_place_troops_exact_amount(self):
+        result = place_troops(self.player, self.territory_owned, 5)
+        self.assertTrue(result)
+        self.assertEqual(self.player.total_troops, 15)
+        self.assertEqual(self.territory_owned.troop_count, 7)
+        self.assertEqual(self.player.placeable_troops, 0)
 
 if __name__ == '__main__':
     unittest.main()
