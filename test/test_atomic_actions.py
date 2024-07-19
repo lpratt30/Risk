@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 import numpy as np
 
-from atomic_actions import get_dice_bag, attack_territory, place_troops
+from atomic_actions import get_dice_bag, attack_territory, place_troops, generate_troops
 
 
 class TestGetDiceBag(unittest.TestCase):
@@ -157,34 +157,89 @@ class TestPlaceTroops(unittest.TestCase):
         self.territory_not_owned.troop_count = 3
         
     @patch('atomic_actions.place_troops')
-    def test_place_troops(self):
+    def test_place_troops(self, mock_place_troops):
         result = place_troops(self.player, self.territory_owned, 3)
         self.assertTrue(result)
         self.assertEqual(self.player.total_troops, 13)
         self.assertEqual(self.territory_owned.troop_count, 5)
         self.assertEqual(self.player.placeable_troops, 2)
     
-    # To verity whether the followings work well
-    def test_place_troops_not_enough_troops(self):
+    @patch('atomic_actions.place_troops')
+    def test_place_troops_not_enough_troops(self, mock_place_troops):
         result = place_troops(self.player, self.territory_owned, 6)
         self.assertFalse(result)
         self.assertEqual(self.player.total_troops, 10)
         self.assertEqual(self.territory_owned.troop_count, 2)
         self.assertEqual(self.player.placeable_troops, 5)
 
-    def test_place_troops_not_owner(self):
+    @patch('atomic_actions.place_troops')
+    def test_place_troops_not_owner(self, mock_place_troops):
         result = place_troops(self.player, self.territory_not_owned, 3)
         self.assertFalse(result)
         self.assertEqual(self.player.total_troops, 10)
         self.assertEqual(self.territory_not_owned.troop_count, 3)
         self.assertEqual(self.player.placeable_troops, 5)
-
-    def test_place_troops_exact_amount(self):
+    
+    @patch('atomic_actions.place_troops')
+    def test_place_troops_exact_amount(self, mock_place_troops):
         result = place_troops(self.player, self.territory_owned, 5)
         self.assertTrue(result)
         self.assertEqual(self.player.total_troops, 15)
         self.assertEqual(self.territory_owned.troop_count, 7)
         self.assertEqual(self.player.placeable_troops, 0)
+
+class TestGenerateTroops(unittest.TestCase):
+    # Test cases for a more aggressive version to encourage aggressive play
+    def setUp(self):
+        self.player = Mock()
+        self.player.territories = [True, False, True, True, False, True]
+        self.player.placeable_troops = 0
+
+        self.territories = [Mock() for _ in range(len(self.player.territories))]
+        self.territories[0].continent = "Continent1"
+        self.territories[2].continent = "Continent2"
+        self.territories[3].continent = "Continent1"
+        self.territories[5].continent = "Continent2"
+        
+        self.continent1 = Mock()
+        self.continent1.territories = [self.territories[0], self.territories[3]]
+        self.continent1.bonus_troop_count = 5
+        
+        self.continent2 = Mock()
+        self.continent2.territories = [self.territories[2], self.territories[5]]
+        self.continent2.bonus_troop_count = 3
+
+        for territory in self.territories:
+            if territory.continent == "Continent1":
+                territory.continent = self.continent1
+            elif territory.continent == "Continent2":
+                territory.continent = self.continent2
+    
+    @patch('atomic_actions.generate_troops')
+    def test_generate_troops_with_continent_bonus(self, mock_generate_troops):
+        generate_troops(self.player, self.territories)
+
+        expected_troops = 3 + sum(1 for item in [True, False, True, True, False, True] if item) + 5 + 3
+        self.assertEqual(self.player.placeable_troops, expected_troops)
+    
+    @patch('atomic_actions.generate_troops')
+    def test_generate_troops_with_partial_continent_bonus(self, mock_generate_troops):
+        self.continent1.territories.append(Mock())
+
+        generate_troops(self.player, self.territories)
+
+        expected_troops = 3 + sum(1 for item in [True, False, True, True, False, True] if item) + 3
+        self.assertEqual(self.player.placeable_troops, expected_troops)
+    
+    @patch('atomic_actions.generate_troops')
+    def test_generate_troops_without_continent_bonus(self, mock_generate_troops):
+        self.continent1.territories.append(Mock())
+        self.continent2.territories.extend([Mock(), Mock()])
+
+        generate_troops(self.player, self.territories)
+        
+        expected_troops = 3 + sum(1 for item in [True, False, True, True, False, True] if item)
+        self.assertEqual(self.player.placeable_troops, expected_troops)
 
 if __name__ == '__main__':
     unittest.main()
