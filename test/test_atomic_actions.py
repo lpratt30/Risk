@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 import numpy as np
 
-from atomic_actions import get_dice_bag, attack_territory, place_troops, generate_troops
+from atomic_actions import get_dice_bag, attack_territory, place_troops, generate_troops, get_card
 
 
 class TestGetDiceBag(unittest.TestCase):
@@ -240,6 +240,55 @@ class TestGenerateTroops(unittest.TestCase):
         
         expected_troops = 3 + sum(1 for item in [True, False, True, True, False, True] if item)
         self.assertEqual(self.player.placeable_troops, expected_troops)
+
+class TestGetCard(unittest.TestCase):
+    def setUp(self):
+        self.hand = Mock()
+        self.hand.count = 0
+        self.hand.soldier = 0
+        self.hand.cavalry = 0
+        self.hand.artillery = 0
+        self.hand.wild = 0
+
+    @patch('random.randint')
+    def test_get_card_soldier(self, mock_randint):
+        mock_randint.return_value = 0  # Soldier range
+        get_card(self.hand)
+        self.assertEqual(self.hand.count, 1)
+        self.assertEqual(self.hand.soldier, 1)
+        self.assertEqual(self.hand.cavalry, 0)
+        self.assertEqual(self.hand.artillery, 0)
+        self.assertEqual(self.hand.wild, 0)
+
+    @patch('random.randint')
+    def test_get_card_cavalry(self, mock_randint):
+        mock_randint.return_value = 14  # Cavalry range
+        get_card(self.hand)
+        self.assertEqual(self.hand.count, 1)
+        self.assertEqual(self.hand.soldier, 0)
+        self.assertEqual(self.hand.cavalry, 1)
+        self.assertEqual(self.hand.artillery, 0)
+        self.assertEqual(self.hand.wild, 0)
+
+    @patch('random.randint')
+    def test_get_card_artillery(self, mock_randint):
+        mock_randint.return_value = 28  # Artillery range
+        get_card(self.hand)
+        self.assertEqual(self.hand.count, 1)
+        self.assertEqual(self.hand.soldier, 0)
+        self.assertEqual(self.hand.cavalry, 0)
+        self.assertEqual(self.hand.artillery, 1)
+        self.assertEqual(self.hand.wild, 0)
+
+    @patch('random.randint')
+    def test_get_card_wild(self, mock_randint):
+        mock_randint.return_value = 43  # Wild card range
+        get_card(self.hand)
+        self.assertEqual(self.hand.count, 1)
+        self.assertEqual(self.hand.soldier, 0)
+        self.assertEqual(self.hand.cavalry, 0)
+        self.assertEqual(self.hand.artillery, 0)
+        self.assertEqual(self.hand.wild, 1)
 
 if __name__ == '__main__':
     unittest.main()
