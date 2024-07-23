@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 import numpy as np
 
-from atomic_actions import get_dice_bag, attack_territory, place_troops, generate_troops, get_card
+from atomic_actions import get_dice_bag, attack_territory, place_troops, generate_troops, get_card, take_cards
 
 
 class TestGetDiceBag(unittest.TestCase):
@@ -289,6 +289,34 @@ class TestGetCard(unittest.TestCase):
         self.assertEqual(self.hand.cavalry, 0)
         self.assertEqual(self.hand.artillery, 0)
         self.assertEqual(self.hand.wild, 1)
+    
+class TestTakeCards(unittest.TestCase):
+    def setUp(self):
+        self.player1 = Mock()
+        self.player2 = Mock()
+        
+        self.player1.hand = Mock()
+        self.player1.hand.artillery = 1
+        self.player1.hand.cavalry = 2
+        self.player1.hand.soldier = 3
+        self.player1.hand.wild = 4
+        self.player1.hand.count = 5
+
+        self.player2.hand = Mock()
+        self.player2.hand.artillery = 6
+        self.player2.hand.cavalry = 7
+        self.player2.hand.soldier = 8
+        self.player2.hand.wild = 9
+        self.player2.hand.count = 10
+
+    def test_take_cards(self):
+        take_cards(self.player1, self.player2)
+        
+        self.assertEqual(self.player1.hand.artillery, 7)  # 1 + 6
+        self.assertEqual(self.player1.hand.cavalry, 9)    # 2 + 7
+        self.assertEqual(self.player1.hand.soldier, 11)   # 3 + 8
+        self.assertEqual(self.player1.hand.wild, 13)      # 4 + 9
+        self.assertEqual(self.player1.hand.count, 15)     # 5 + 10
 
 if __name__ == '__main__':
     unittest.main()

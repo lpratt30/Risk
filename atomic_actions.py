@@ -162,6 +162,7 @@ def generate_troops(player, territories):
 # Get random card
 # The deck of cards in Risk does correspond directly to the (42 on classic map) territories on the board. 2 wild cards
 def get_card(hand):
+    # Question: According to the logistics of the real Risk game, can this be complete random? For example, a player may not draw a card that is already in another player's hand.
     card = random.randint(0, 43)  # randint is inclusive of upperbounds as opposed to np.random.randit
     hand.count += 1
     if 0 <= card < 14:
